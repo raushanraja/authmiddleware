@@ -13,7 +13,7 @@
 ## Installation
 
 ```console
-pip install oktamiddleware
+pip install authmiddleware
 ```
 
 ## License
