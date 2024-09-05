@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "authmiddleware"
+dynamic = ["version"]
+description = ''
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "raushanraja", email = "vraushanraja@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+ "fastapi==0.112.2",
+ "PyJWT==2.9.0",
+ "passlib[bcrypt]==1.7.4",
+]
+
+[project.urls]
+Documentation = "https://github.com/raushanraja/authmiddleware#readme"
+Issues = "https://github.com/raushanraja/authmiddleware/issues"
+Source = "https://github.com/raushanraja/authmiddleware"
+
+[tool.hatch.version]
+path = "src/authmiddleware/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [ "mypy>=1.0.0" ]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/authmiddleware tests}"
+
+[tool.coverage.run]
+source_pkgs = ["authmiddleware", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/authmiddleware/__about__.py",
+]
+
+[tool.coverage.paths]
+authmiddleware = ["src/oktamiddleware", "*/oktamiddleware/src/oktamiddleware"]
+tests = ["tests", "*/authmiddleware/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
