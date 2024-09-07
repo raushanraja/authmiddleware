@@ -1,48 +1,31 @@
-from starlette.responses import JSONResponse, RedirectResponse
-from starlette.datastructures import Headers, URL, QueryParams
-from fastapi import Request
+from collections.abc import Callable
+from dataclasses import dataclass
+
 import jwt
-
-AUTHORIZE_URL = "http://localhost:8089/authorize"
-CLIENT_ID = "raushan"
-CLIENT_SECRET = "client_secret"
-REDIRECT_URI = "http://localhost:8090/auth/callback"
-RESPONSE_TYPE = "code"
+from fastapi import Request
+from starlette.datastructures import QueryParams
+from starlette.responses import JSONResponse, RedirectResponse
 
 
-def validate_token(token):
-    if token:
-        try:
-            claims = jwt.decode(token, "secret", algorithms=["HS256"])
-            return claims
-        except jwt.ExpiredSignatureError:
-            return None
-
-
-def decode_token(token, scope):
-    print(f"Token: {token}")
-    if token:
-        try:
-            claims = jwt.decode(token, "secret", algorithms=["HS256"])
-            scope["user"] = claims
-        except jwt.ExpiredSignatureError:
-            print("Token expired")
-            scope["user"] = None
-        except jwt.InvalidSignatureError:
-            print("Invalid signature")
-            scope["user"] = None
-        except jwt.InvalidTokenError:
-            scope["user"] = None
-    else:
-        scope["user"] = None
-
-    return scope
+@dataclass
+class Config:
+    authorize_url: str
+    unauthorized_url: str
+    client_id: str
+    client_secret: str
+    redirect_uri: str
+    response_type: str
+    algorithms: list[str]
+    secret_key: str
+    audience: str
+    issuer: str
 
 
 class AuthMiddleware:
-    def __init__(self, app, get_token):
+    def __init__(self, app, get_token: Callable, config: Config):
         self.app = app
         self.get_token = get_token
+        self.config = config
 
     async def callback(self, scope, receive, send):
         # Get the code from the request query params
@@ -52,7 +35,7 @@ class AuthMiddleware:
         if code:
             print(f"Code: {code} Client ID: {client_id}")
             # Call the token endpoint to get the token
-            token = await self.get_token(code, "raushan")
+            token = await self.get_token(code, self.config.client_id)
 
             print(f"Token: {token}")
 
@@ -66,29 +49,49 @@ class AuthMiddleware:
         return
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] == "http" and scope["path"] == "/auth/callback":
-            await self.callback(scope, receive, send)
-            return
+        try:
+            if scope["type"] == "http" and scope["path"] == "/auth/callback":
+                await self.callback(scope, receive, send)
+                return
 
-        # Get the token from the request headers
-        request = Request(scope=scope)
-        token = request.cookies.get("token", "")
-        if token:
-            print("Token from cookie found \n\n")
+            # Get the token from the request headers
+            request = Request(scope=scope)
+            token = request.cookies.get("token", "").strip()
 
-        print(f"request: {request}")
-        print(f"request: {request.cookies}")
-        print(f"Token: {token}")
-        if not token.startswith("Bearer"):
-            url = f"{AUTHORIZE_URL}?client_id=raushan&client_secret={CLIENT_SECRET}"
-            url += f"&redirect_uri={REDIRECT_URI}&response_type={RESPONSE_TYPE}"
-            response = RedirectResponse(url=url, status_code=302)
+            if not token.startswith("Bearer"):
+                url = f"{self.config.authorize_url}?client_id={self.config.client_id}&client_secret={self.config.client_secret}"
+                url += f"&redirect_uri={self.config.redirect_uri}&response_type={self.config.response_type}"
+                response = RedirectResponse(url=url, status_code=302)
+                await response(scope, receive, send)
+                return
+
+            # Validate the decode_token
+            token = token.split(" ")[1]
+            self.decode_token(token, scope)
+
+            # Call the next middleware
+            await self.app(scope, receive, send)
+
+        except Exception as e:
+            print(f"Error: {e}")
+            response = RedirectResponse(
+                url=self.config.unauthorized_url, status_code=302
+            )
             await response(scope, receive, send)
             return
 
-        # Validate the decode_token
-        token = token.split(" ")[1]
-        decode_token(token, scope)
-
-        # Call the next middleware
-        await self.app(scope, receive, send)
+    def decode_token(self, token, scope):
+        print(f"Token: {token}")
+        print(f"Secret Key: {self.config.secret_key}")
+        print(f"Algorithms: {self.config.algorithms}")
+        if token:
+            claims = jwt.decode(
+                token,
+                self.config.secret_key,
+                algorithms=self.config.algorithms,
+                audience=self.config.audience,
+                issuer=self.config.issuer,
+            )
+            scope["user"] = claims
+        else:
+            raise Exception("Invalid token")
