@@ -54,7 +54,6 @@ jobs:
         'v${{ env.VERSION }}'
         --repo '${{ github.repository }}'
         --notes ""
-        dist/*.whl
     - name: Upload artifact signatures to GitHub Release
       env:
         GITHUB_TOKEN: ${{ github.token }}
@@ -63,5 +62,5 @@ jobs:
       # sigstore-produced signatures and certificates.
       run: >-
         gh release upload
-        '${{ github.ref_name }}' dist/**
+        'v${{ env.VERSION }}' dist/**
         --repo '${{ github.repository }}'
