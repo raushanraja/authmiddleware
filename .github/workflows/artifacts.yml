@@ -54,6 +54,7 @@ jobs:
         'v${{ env.VERSION }}'
         --repo '${{ github.repository }}'
         --notes ""
+        dist/*.whl
     - name: Upload artifact signatures to GitHub Release
       env:
         GITHUB_TOKEN: ${{ github.token }}
