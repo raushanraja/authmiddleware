@@ -51,8 +51,7 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       run: >-
         gh release create
-         "v${{ env.VERSION }}"
-        --title '${{ env.VERSION }}'
+        'v${{ env.VERSION }}'
         --repo '${{ github.repository }}'
         --notes ""
     - name: Upload artifact signatures to GitHub Release
