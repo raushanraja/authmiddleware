@@ -1,8 +1,5 @@
 # AuthMiddleware
 
-[![PyPI - Version](https://img.shields.io/pypi/v/authmiddleware.svg)](https://pypi.org/project/authmiddleware)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/authmiddleware.svg)](https://pypi.org/project/authmiddleware)
-
 -----
 
 ## Table of Contents
@@ -13,8 +10,6 @@
 ## Installation
 
 ```console
-pip install authmiddleware
-```
 
 ## License
 

@@ -19,6 +19,13 @@ jobs:
         python-version: '3.11'
         cache: 'pip'
 
+
+    - name: Extract version from __about__.py
+      id: get_version
+      run: |
+        version=$(grep -oP '(?<=__version__ = ")[^"]*' src/authmiddleware/__about__.py)
+        echo "VERSION=$version" >> $GITHUB_ENV
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip 
@@ -30,7 +37,7 @@ jobs:
     - name: Store the distribution packages
       uses: actions/upload-artifact@v4
       with:
-        name: python-package-distributions
+        name: authmiddleware-distributions-${{ env.VERSION }}
         path: dist/
 
     - name: Sign the dists with Sigstore
@@ -42,11 +49,8 @@ jobs:
     - name: Create GitHub Release
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: >-
-        gh release create
-        '${{ github.ref_name }}'
-        --repo '${{ github.repository }}'
-        --notes ""
+      run: |
+        gh release create "v${{ env.VERSION }}" --repo '${{ github.repository }}' --notes ""
     - name: Upload artifact signatures to GitHub Release
       env:
         GITHUB_TOKEN: ${{ github.token }}
